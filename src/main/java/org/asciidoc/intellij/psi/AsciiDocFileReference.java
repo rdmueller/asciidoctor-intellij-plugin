@@ -20,11 +20,17 @@ import com.intellij.psi.PsiManager;
 import com.intellij.psi.PsiPolyVariantReference;
 import com.intellij.psi.PsiReferenceBase;
 import com.intellij.psi.ResolveResult;
+import com.intellij.psi.impl.file.PsiBinaryFileImpl;
+import com.intellij.psi.impl.file.PsiDirectoryImpl;
+import com.intellij.psi.impl.file.PsiJavaDirectoryImpl;
+import com.intellij.psi.impl.source.PsiFileImpl;
+import com.intellij.psi.impl.source.PsiPlainTextFileImpl;
 import com.intellij.psi.impl.source.resolve.reference.impl.providers.FileInfoManager;
 import com.intellij.psi.util.PsiUtilCore;
 import com.intellij.util.CommonProcessors;
 import com.intellij.util.IncorrectOperationException;
 import icons.AsciiDocIcons;
+import kotlinx.html.P;
 import org.apache.commons.lang.ArrayUtils;
 import org.asciidoc.intellij.AsciiDocLanguage;
 import org.asciidoc.intellij.completion.AsciiDocCompletionContributor;
@@ -36,7 +42,9 @@ import java.nio.file.InvalidPathException;
 import java.nio.file.Paths;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -922,8 +930,26 @@ public class AsciiDocFileReference extends PsiReferenceBase<PsiElement> implemen
       } else {
         PsiElement resolve = resolve(base);
         if (resolve != null) {
-          for (final PsiElement child : resolve.getChildren()) {
+          PsiElement[] children = resolve.getChildren();
+          Arrays.sort(children, new Comparator<PsiElement>() {
+            @Override
+            public int compare(PsiElement child1, PsiElement child2) {
+              if (child1 instanceof PsiFileSystemItem && child2 instanceof PsiFileSystemItem) {
+                PsiFileSystemItem file1, file2;
+                file1 = ((PsiFileSystemItem) child1);
+                file2 = ((PsiFileSystemItem) child2);
+                return file1.getName().compareTo(file2.getName());
+              } else {
+                return 0;
+              }
+            }
+          }
+              );
+          System.out.println("------------");
+          for (final PsiElement child : children) {
             if (child instanceof PsiFileSystemItem) {
+              System.out.println("" + ((PsiFileSystemItem) child).getName());
+              System.out.println("" + child.getClass());
               collector.process((PsiFileSystemItem) child);
             }
           }
